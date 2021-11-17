@@ -1,0 +1,3 @@
+ImageHash==4.2.1
+Pillow==8.4.0
+
