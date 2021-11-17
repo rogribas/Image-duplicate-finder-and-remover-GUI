@@ -6,3 +6,11 @@ I takes some time to compute if there are a lot of images on the folder selected
 
 ## Screenshot
 <img src="screenshot.png" width="800">
+
+```
+python -m venv dup_env
+source dup_env/bin/activate
+pip install -r requirements.txt
+
+python gui_duple.py
+```
