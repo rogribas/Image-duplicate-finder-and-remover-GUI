@@ -11,6 +11,8 @@ from tkinter.ttk import Progressbar
 from PIL import Image, ImageTk
 import imagehash
 
+from concurrent.futures import ProcessPoolExecutor
+
 
 def convert_size(size_bytes):
    if size_bytes == 0:
@@ -36,22 +38,33 @@ class Photo(object):
         return self.name.split('.')[0] < other.name.split('.')[0]
 
 
+def hashfunc_parallel(photo):
+    try:
+        photo.hash_value = imagehash.phash(Image.open(photo.path), hash_size=64,
+                                    highfreq_factor=4)
+        return photo
+    except Exception as e:
+        print('Problem:', e, 'with', photo.name)
+
 class SimilarImagesFinder(object):
 
-    def find_similar_images(self, folder_path, outqueue,
+    def find_similar_images(self, folder_path, outqueue=None,
                             hashfunc=imagehash.phash):
-        
+
         def is_image(filename):
             f = filename.lower()
             return f.endswith(".png") or f.endswith(".jpg") or \
                 f.endswith(".jpeg") or f.endswith(".bmp") or f.endswith(".gif") or '.jpg' in f
-        
+
+        TIME_0 = time.perf_counter()
+        TIME = time.perf_counter()
+
         photos_list = []
         for path in os.listdir(folder_path):
             if is_image(path):
                 photos_list.append(Photo(os.path.join(folder_path, path)))
-        
-        photos_hash_dict = {} 
+
+        photos_hash_dict = {}
         total_photos = len(photos_list) * 2
         count = 0
         for photo in sorted(photos_list):
@@ -61,38 +74,42 @@ class SimilarImagesFinder(object):
             except Exception as e:
                 print('Problem:', e, 'with', photo.name)
                 continue
-            print(photo.path)
+            # print(photo.path)
             if photo.hash_value in photos_hash_dict:
                 photos_hash_dict[photo.hash_value].append(photo)
             else:
                 photos_hash_dict[photo.hash_value] = [photo]
-            
-            count += 1
-            outqueue.put(count/total_photos)
 
-        print('HASSHING ENDED')
+            count += 1
+            if outqueue:
+                outqueue.put(count/total_photos)
+
+        print('HASHING ENDED')
+        hash_time = time.perf_counter() - TIME
+        print('hash time', hash_time)
+        TIME = time.perf_counter()
 
         merged_hashes = set()
         results_duplicated = {}
+
         for hash_j in list(photos_hash_dict):
             count += 1
-            outqueue.put(count/total_photos)
+            if outqueue:
+                outqueue.put(count/total_photos)
             # print('HASH', hash_j)
             for hash_k, photos_k in photos_hash_dict.items():
-                # print('compare', hash_k)
-                if hash_k not in merged_hashes:
-                    dist = hash_k - hash_j
-                    if dist < 500:
-                        merged_hashes.add(hash_k)
-                        # for p in photos_k:
-                        #     p.distance = dist
-                        hash_j_str = str(hash_j)[:32]
-                        if hash_j_str in results_duplicated:
-                            results_duplicated[hash_j_str] += photos_k
-                        else:
-                            results_duplicated[hash_j_str] = photos_k
-        
+                dist = hash_k - hash_j
+                if dist < 500 and hash_k not in merged_hashes:
+                    merged_hashes.add(hash_k)
+                    hash_j_str = str(hash_j)[:32]
+                    if hash_j_str in results_duplicated:
+                        results_duplicated[hash_j_str] += photos_k
+                    else:
+                        results_duplicated[hash_j_str] = photos_k
+
         print('DISTANCE ENDED')
+        dist_time = time.perf_counter() - TIME
+        print('distance time', dist_time)
 
         num_photos_to_delete = 0
         for hash_k in list(results_duplicated):
@@ -108,6 +125,9 @@ class SimilarImagesFinder(object):
                         num_photos_to_delete += 1
 
         outqueue.put([num_photos_to_delete, results_duplicated])
+
+        t_time = time.perf_counter() - TIME_0
+        print('total time', t_time)
 
 
 class GUIDuple(object):
@@ -201,7 +221,7 @@ class GUIDuple(object):
     def toggle_photo_key(self, evt):
         position = int(evt.keysym) - 1
         self.toggle_photo(position)
-    
+
     def toggle_photo(self, position):
         # Update object photo
         photo_obj = self.results[self.lb_ids[self.lb.curselection()[0]]][position]
@@ -222,7 +242,7 @@ class GUIDuple(object):
         else:
             self.btn_delete_photos.config(state='normal')
         self.label_delete_num.config(text=str(self.num_photos_to_delete))
-    
+
     def update(self, outqueue):
         try:
             msg = outqueue.get_nowait()
@@ -244,7 +264,7 @@ class GUIDuple(object):
                     self.lb.focus_set()
                 else:
                     messagebox.showinfo("Duplicate finder", "No duplicates found!")
-                
+
             else:
                 self.prgs_bar['value'] = msg * 100
                 self.root.after(100, self.update, outqueue)

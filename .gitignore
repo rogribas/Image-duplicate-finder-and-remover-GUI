@@ -1,2 +1,4 @@
 
 dup_env/
+env/
+test_dup.py
