@@ -1,3 +1,4 @@
+import argparse
 import math
 import os
 import queue
@@ -124,7 +125,8 @@ class SimilarImagesFinder(object):
                         photo_obj.delete = True
                         num_photos_to_delete += 1
 
-        outqueue.put([num_photos_to_delete, results_duplicated])
+        if outqueue:
+            outqueue.put([num_photos_to_delete, results_duplicated])
 
         t_time = time.perf_counter() - TIME_0
         print('total time', t_time)
@@ -144,7 +146,8 @@ class GUIDuple(object):
 
         self.root = Tk()
         self.root.title('Duplicates finder')
-        self.root.attributes('-fullscreen', True)
+        w, h = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        self.root.geometry("%dx%d+0+0" % (w, h))
 
         # create all of the main containers
         self.frame_header1 = Frame(self.root, padx=15, pady=5, bg=self.COLOR_FRAMES1)
@@ -351,14 +354,12 @@ class GUIDuple(object):
         mainloop()
 
 
-guiduple = GUIDuple()
-guiduple.run()
-
-# img = Image.open('/Users/roger/Desktop/duplicates_test/B1.jpg')
-# img = img.resize((250, 250), Image.ANTIALIAS)
-# render = ImageTk.PhotoImage(img)
-# label_img = Label(root, image=render)
-# label_img.grid(row=3, column=1)
-
-
-# action_scan()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', type=str)
+    args = parser.parse_args()
+    if args.debug:
+        SimilarImagesFinder().find_similar_images(args.debug)
+    else:
+        guiduple = GUIDuple()
+        guiduple.run()
