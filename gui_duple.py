@@ -13,7 +13,12 @@ from PIL import Image, ImageTk
 import imagehash
 
 from concurrent.futures import ProcessPoolExecutor
+from pillow_heif import register_heif_opener
 
+register_heif_opener()
+
+
+IMAGE_FORMATS = ["png", "jpg", "jpeg", "heic", "heif", "bmp", "gif"]
 
 def convert_size(size_bytes):
    if size_bytes == 0:
@@ -54,8 +59,7 @@ class SimilarImagesFinder(object):
 
         def is_image(filename):
             f = filename.lower()
-            return f.endswith(".png") or f.endswith(".jpg") or \
-                f.endswith(".jpeg") or f.endswith(".bmp") or f.endswith(".gif") or '.jpg' in f
+            return f.split('.')[-1] in IMAGE_FORMATS
 
         TIME_0 = time.perf_counter()
         TIME = time.perf_counter()
