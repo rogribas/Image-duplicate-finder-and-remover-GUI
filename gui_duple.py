@@ -15,6 +15,8 @@ import imagehash
 from concurrent.futures import ProcessPoolExecutor
 from pillow_heif import register_heif_opener
 
+import multiprocessing
+
 register_heif_opener()
 
 
@@ -44,13 +46,13 @@ class Photo(object):
         return self.name.split('.')[0] < other.name.split('.')[0]
 
 
-def hashfunc_parallel(photo):
+def process_photo(photo):
     try:
         photo.hash_value = imagehash.phash(Image.open(photo.path), hash_size=64,
                                     highfreq_factor=4)
-        return photo
     except Exception as e:
-        print('Problem:', e, 'with', photo.name)
+        print('Problem:', e, 'with', photo.name, flush=True)
+    return photo
 
 class SimilarImagesFinder(object):
 
@@ -72,22 +74,33 @@ class SimilarImagesFinder(object):
         photos_hash_dict = {}
         total_photos = len(photos_list) * 2
         count = 0
+
+        num_processes = multiprocessing.cpu_count()
+        print('num_processes', num_processes)
+
+        total_photos = len(photos_list)
+        p = multiprocessing.Pool(processes=20)
+        CHUNKSIZE = 10
+        rs = p.map_async(process_photo, sorted(photos_list), chunksize=CHUNKSIZE)
+        p.close() # No more work
+        while (True):
+            if (rs.ready()):
+                break
+            count = (total_photos - rs._number_left * CHUNKSIZE) / total_photos
+            if count < 0:
+                count = 0.01
+            if outqueue:
+                outqueue.put(count)
+            time.sleep(0.2)
+        
+        print("ended multiprocessing")
+        photos_list = rs.get()
+
         for photo in sorted(photos_list):
-            try:
-                photo.hash_value = hashfunc(Image.open(photo.path), hash_size=64,
-                                            highfreq_factor=4)
-            except Exception as e:
-                print('Problem:', e, 'with', photo.name)
-                continue
-            # print(photo.path)
             if photo.hash_value in photos_hash_dict:
                 photos_hash_dict[photo.hash_value].append(photo)
             else:
                 photos_hash_dict[photo.hash_value] = [photo]
-
-            count += 1
-            if outqueue:
-                outqueue.put(count/total_photos)
 
         print('HASHING ENDED')
         hash_time = time.perf_counter() - TIME
@@ -98,11 +111,15 @@ class SimilarImagesFinder(object):
         results_duplicated = {}
 
         for hash_j in list(photos_hash_dict):
+            if not hash_j:
+                continue
             count += 1
             if outqueue:
                 outqueue.put(count/total_photos)
             # print('HASH', hash_j)
             for hash_k, photos_k in photos_hash_dict.items():
+                if not hash_k:
+                    continue
                 dist = hash_k - hash_j
                 if dist < 500 and hash_k not in merged_hashes:
                     merged_hashes.add(hash_k)

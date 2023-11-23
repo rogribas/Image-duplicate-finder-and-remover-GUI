@@ -1,3 +1,2 @@
 ImageHash==4.3.1
-Pillow==9.3.0
-pillow-heif==0.9.3
+pillow-heif==0.13.1
