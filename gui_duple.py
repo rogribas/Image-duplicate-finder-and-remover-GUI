@@ -171,10 +171,10 @@ class GUIDuple(object):
         self.root.geometry("%dx%d+0+0" % (w, h))
 
         # create all of the main containers
-        self.frame_header1 = Frame(self.root, padx=15, pady=5, bg=self.COLOR_FRAMES1)
-        self.frame_header2 = Frame(self.root, padx=15, pady=5, bg=self.COLOR_FRAMES1)
+        self.frame_header1 = Frame(self.root, padx=15, pady=5)
+        self.frame_header2 = Frame(self.root, padx=15, pady=5)
         self.frame_center = Frame(self.root)
-        self.frame_bottom = Frame(self.root, padx=15, pady=15, bg=self.COLOR_FRAMES1)
+        self.frame_bottom = Frame(self.root, padx=15, pady=15)
 
         # layout all of the main containers
         self.root.grid_rowconfigure(2, weight=1)
@@ -187,14 +187,14 @@ class GUIDuple(object):
 
         # widgets frame_header1
         self.frame_header1.grid_columnconfigure(1, weight=1)
-        self.label_title = Label(self.frame_header1, text='DUPLICATES FINDER', font="-weight bold", bg=self.COLOR_FRAMES1)
+        self.label_title = Label(self.frame_header1, text='DUPLICATES FINDER', font="-weight bold")
         self.label_title.grid(row=0, column=0)
         self.folder_path = StringVar()
-        self.label_folder = Entry(self.frame_header1, state='disabled', width=40, textvariable=self.folder_path, highlightbackground=self.COLOR_FRAMES1)
+        self.label_folder = Entry(self.frame_header1, state='disabled', width=40, textvariable=self.folder_path)
         self.label_folder.grid(row=0, column=2)
-        self.btn_browse_folder = Button(self.frame_header1, text="Choose folder", command=self.action_browse, highlightbackground=self.COLOR_FRAMES1)
+        self.btn_browse_folder = Button(self.frame_header1, text="Choose folder", command=self.action_browse)
         self.btn_browse_folder.grid(row=0, column=3, padx=(5, 50))
-        self.btn_scan = Button(self.frame_header1, text="Scan", command=self.action_scan, state='disabled', highlightbackground=self.COLOR_FRAMES1)
+        self.btn_scan = Button(self.frame_header1, text="Scan", command=self.action_scan, state='disabled')
         self.btn_scan.grid(row=0, column=4)
 
         # widgets frame_header1
@@ -204,26 +204,26 @@ class GUIDuple(object):
 
         # widgets frame_bottom
         self.frame_bottom.grid_columnconfigure(2, weight=1)
-        self.label_delete_num = Label(self.frame_bottom, text='0', bg=self.COLOR_FRAMES1)
+        self.label_delete_num = Label(self.frame_bottom, text='0')
         self.label_delete_num.grid(row=0, column=0)
-        self.label_delete_str = Label(self.frame_bottom, text='photos to delete', bg=self.COLOR_FRAMES1)
+        self.label_delete_str = Label(self.frame_bottom, text='photos to delete')
         self.label_delete_str.grid(row=0, column=1)
-        self.btn_delete_photos = Button(self.frame_bottom, text="Delete photos", state=DISABLED, command=self.action_delete, highlightbackground=self.COLOR_FRAMES1)
+        self.btn_delete_photos = Button(self.frame_bottom, text="Delete photos", state=DISABLED, command=self.action_delete)
         self.btn_delete_photos.grid(row=0, column=3)
 
         # frames frame_center
         self.frame_center.grid_columnconfigure(1, weight=1)
         self.frame_center.grid_rowconfigure(0, weight=1)
-        self.frame_center1 = Frame(self.frame_center, bg=self.COLOR_FRAMES2, padx=15, pady=5)
+        self.frame_center1 = Frame(self.frame_center, padx=15, pady=5)
         self.frame_center1.grid(row=0, column=0)
         self.frame_center1.grid(row=0, sticky="nsew")
-        self.frame_center2 = Frame(self.frame_center, pady=15, bg=self.COLOR_FRAMES3)
+        self.frame_center2 = Frame(self.frame_center, pady=15)
         self.frame_center2.grid(row=0, column=1)
         self.frame_center2.grid(row=0, sticky="nsew")
 
         # widgets frame_center1
         self.frame_center1.grid_rowconfigure(1, weight=1)
-        self.label_list = Label(self.frame_center1, text="Duplicates", bg=self.COLOR_FRAMES2)
+        self.label_list = Label(self.frame_center1, text="Duplicates")
         self.label_list.grid(row=0, column=0)
         self.lb_ids = []
         self.lb = Listbox(self.frame_center1, font=("Courier", 12), height=600)
